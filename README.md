@@ -35,7 +35,7 @@ cd gpx2shp_lv03
 
 Make sure that the GPX files you want to convert hava a newline after each element. If you are not sure how this should look, take a look at the attached test file `test.gpx`.
 
-If only one GPX file to be converted, simply click on your new button, choose the GPX file in the first dialogue and the name and storage location for the shapefile in the second dialogue. Once the conversion is complete, you can add the new shapefile using Add Theme.
+If only one GPX file is to be converted, simply click on your new button, choose the GPX file in the first dialogue and the name and storage location for the shapefile in the second dialogue. Once the conversion is complete, you can add the new shapefile using Add Theme.
 
 To convert multiple GPX files, hold down the Shift key while clicking on the new button. Then select the directory where the GPX tracks are stored, click OK and set the storage directory for the new shapefiles and press OK again. All GPX files in the specified directory will then be converted.
 
