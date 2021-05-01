@@ -1,0 +1,48 @@
+'######################################################################################
+'#
+'# Filename:         Sub_wgs2ch03.ave
+'# Author:           Adrian Boehlen
+'# Date:             24.05.2015
+'# Version:          0.1
+'#
+'# Purpose:          konvertiert WGS1984 Koordinaten
+'#                     (Laenge / Breite in Dezimalgrad) 
+'#                   zu CH1903-Koordinaten 
+'#                     (Meter, bezogen auf den Nullpunkt Bern)
+'#
+'# Based on:         "Formeln und Konstanten für die Berechnung der Schweizerischen
+'#                    schiefachsigen Zylinderprojektion und der Transformation zwischen
+'#                    Koordinatensysteme", Okt. 2008, S. 11
+'#               
+'######################################################################################
+
+'# rechnet Winkel von Dezimalgrad zu sexagesimalen Sekunden um
+
+grad = _breite.Truncate
+minute = ((_breite - grad) * 60).Truncate
+sekunde = (((_breite - grad) * 60) - minute ) * 60
+sexagesimalBreite = sekunde + (minute * 60) + (grad * 3600)
+
+grad = _laenge.Truncate
+minute = ((_laenge - grad) * 60).Truncate
+sekunde = (((_laenge - grad) * 60) - minute ) * 60
+sexagesimalLaenge = sekunde + (minute * 60) + (grad * 3600)
+
+'# konvertiert WGS Breite/Laenge zu CH1903
+
+breiteAux = (sexagesimalBreite - 169028.66) / 10000
+laengeAux = (sexagesimalLaenge - 26782.5) / 10000
+
+_laenge = 600072.37 
++ (211455.93 * laengeAux) 
+-  (10938.51 * laengeAux * breiteAux)
+-      (0.36 * laengeAux * (breiteAux ^ 2))
+-     (44.54 * (laengeAux ^ 3))
+
+_breite = 200147.07
++ (308807.95 * breiteAux) 
++   (3745.25 * (laengeAux ^ 2))
++     (76.63 * (breiteAux ^ 2))
+-    (194.56 * (laengeAux ^ 2) * breiteAux)
++    (119.79 * (breiteAux ^ 3))
+

@@ -1,0 +1,87 @@
+'##############################################################
+'#
+'# Filename:     gpx2shp_lv03
+'# Author:       Adrian Boehlen
+'# Date:         31.01.2021
+'# Version:      1.1
+'#
+'# Purpose:      konvertiert ein GPX-File in ein Shapefile
+'#               in CH1903 LV03
+'#               bei gedrueckter Shift-Taste kann ein ganzer
+'#               Ordner mit GPX-Files auf einmal konvertiert
+'#               werden
+'# Note:         benoetigt Sub_gpx2shp im gleichen Projekt
+'#                 
+'##############################################################
+
+'# ein View muss aktiv sein
+
+theView = av.GetActiveDoc
+
+if (theView.Is(view).Not) then
+  MsgBox.Warning("Start this script from an active View.","")
+  return nil
+end
+
+if (System.IsShiftKeyDown) then
+
+  '# Filter setzen
+  theFilter = "*.gpx"
+  
+  '# Inputverzeichnis definieren
+  inputdir = FileDialog.Put("   Select directory - not files".AsFileName,
+                             theFilter,"Selecting " + theFilter +
+                             " files from directory...")
+  if (inputdir = nil)then
+    return nil
+  end
+
+  inputdir = inputdir.ReturnDir
+
+  '# Outputverzeichnis definieren
+  outputdir = FileDialog.Put("   Select directory - not files".AsFileName,
+                             theFilter,"Saving Shapefile in directory...")
+  if (outputdir = nil)then
+    return nil
+  end
+
+  outputdir = outputdir.AsString.AsTokens("   ").Get(0)
+
+  '# alle Dateien mit der passenden Endung gemaess Filter im Verzeichnis auswaehlen
+  '# und konvertieren
+  fileStack = Stack.Make
+  fileStack.Push(inputdir)
+  while (fileStack.IsEmpty.Not)
+    fileNameList = fileStack.Pop.Read(theFilter)
+    for each gpxName in fileNameList
+      gpxBaseName = gpxName.GetBaseName.AsTokens(".").Get(0)
+      gpxFile = LineFile.Make(gpxName, #FILE_PERM_READ)
+      shpName = FileName.Make(outputdir.AsString + gpxBaseName + "_pt.shp")
+      av.Run("Sub_gpx2shp", {gpxFile, shpName})
+    end
+  end
+
+else
+
+  '# einzelnes GPX-File einlesen
+  gpxName = FileDialog.Show("*.gpx","GPX File","Select GPX File")
+  if (gpxName = nil) then 
+    return nil 
+  end
+  
+  gpxBaseName = gpxName.GetBaseName.AsTokens(".").Get(0)
+
+  gpxFile = LineFile.Make(gpxName, #FILE_PERM_READ)
+
+  '# zu erstellendes Shapefile definieren
+  outputdir = av.GetProject.GetWorkDir
+  defaultName = FileName.Make(outputdir.AsString + "\" + gpxBaseName + "_pt.shp")
+  shpName  = FileDialog.Put(defaultName,"shp","Output Shape File")
+  if (shpName = nil) then 
+    return nil 
+  end
+
+  shpName.SetExtension("shp")
+
+  av.Run("Sub_gpx2shp", {gpxFile, shpName})
+end

@@ -1,0 +1,170 @@
+'##############################################################
+'#
+'# Filename:     Sub_gpx2shp.ave
+'# Author:       Adrian Boehlen
+'# Date:         23.01.2021
+'# Version:      1.0
+'#
+'# Purpose:      Subroutine, welche von gpx2shp_lv03 aufgerufen
+'#               wird  
+'#               konvertiert GPX-File zu Shape-File (Punkte) 
+'#               mit Uebernahme der Hoehe ins Attribut "Hoehe"
+'#
+'#               transformiert Koordinaten von WGS1984 nach
+'#               CH1903 LV03
+'#
+'#               fuer jeden Punkt wird die Gesamtdistanz
+'#               gegenueber der bisherigen Strecke ermittelt
+'#
+'#               fuer jeden Punkt wird der Auf- und Abstieg
+'#               gegenueber der bisherigen Strecke ermittelt
+'#
+'#               fuer jeden Punkt wird die Zeitdauer in Minuten
+'#               gegenueber der bisherigen Strecke ermittelt
+'#
+'#               fuer jeden Punkt wird die Durchschnitts-
+'#               geschwindigkeit zu diesem Zeitpunkt ermittelt
+'#
+'# Note:         benoetigt Sub_wgs2ch03 im gleichen Projekt
+'#
+'##############################################################
+
+
+gpxFile = Self.Get(0)
+totalRecs = gpxFile.GetSize
+shpName = Self.Get(1)
+
+
+shpFTab = Ftab.MakeNew(shpName,Point)
+fields = List.Make
+fields.Add(Field.Make("ID", #FIELD_SHORT, 4, 0))
+fields.Add(Field.Make("Dist", #FIELD_SHORT, 6, 0))
+fields.Add(Field.Make("Hoehe", #FIELD_SHORT, 4, 0))
+fields.Add(Field.Make("bergauf", #FIELD_SHORT, 4, 0))
+fields.Add(Field.Make("bergab", #FIELD_SHORT, 4, 0))
+fields.Add(Field.Make("Uhrzeit", #FIELD_CHAR, 8, 0))
+fields.Add(Field.Make("Dauer", #FIELD_SHORT, 5, 0))
+fields.Add(Field.Make("Durchsch", #FIELD_FLOAT, 6, 3))
+shpFTab.AddFields(fields)
+shpField = shpFTab.FindField("Shape")
+idField = shpFTab.findField("ID")
+distField = shpFTab.FindField("Dist")
+heightField = shpFTab.FindField("Hoehe")
+bergaufField = shpFTab.FindField("bergauf")
+bergabField = shpFTab.FindField("bergab")
+zeitField = shpFTab.FindField("Uhrzeit")
+dauerField = shpFTab.FindField("Dauer")
+durchField = shpFTab.FindField("Durchsch")
+
+'########## diverse Variablen initialisieren ##########
+
+pte = 0
+dauer = 0
+dist = 0
+dist_total = 0
+bergauf = 0
+bergab = 0
+breite_diff = 0
+laenge_diff = 0
+
+'########## GPX-File einlesen und auswerten ##########
+
+for each i in 1..totalRecs                          '# zeilenweise durchgehen
+  theLine = gpxFile.ReadElt                         '# aktuelle Zeile
+  for each wort in theLine.AsList                   '# an Leerzeichen in "Woerter" aufbrechen
+    if (wort.Left(5) = "lat=""") then               '# Breitengrad-Info ermitteln
+      _breite = wort.AsTokens("""")                 '# an " in Einzelteile aufbrechen
+      _breite = _breite.Get(1).AsNumber             '# 2. Teil uebernehmen
+    end
+    if (wort.Left(5) = "lon=""") then               '# Laengengrad-Info ermitteln
+      _laenge = wort.AsTokens("""")                 '# an " in Einzelteile aufbrechen
+      _laenge = _laenge.Get(1).AsNumber             '# 2. Teil uebernehmen
+    end
+  end
+  
+  if (theLine.Trim.Left(5) = "<ele>") then          '# Start-Tag fuer Hoehe finden
+    hoehe = theLine.AsTokens(">")                   '# an > in Einzelteile aufbrechen
+    hoehe = hoehe.Get(1).AsTokens("<")              '# 2. Teil an < in Einzelteile aufbrechen
+    hoehe = hoehe.Get(0).AsNumber                   '# 1. Teil uebernehmen
+    
+  elseif (theLine.Trim.Left(6) = "<time>") then     '# Start-Tag fuer Datum und Zeit finden
+    datumzeit = theLine.AsTokens(">")               '# an > in Einzelteile aufbrechen
+    datumzeit = datumzeit.Get(1).AsTokens("<")      '# 2. Teil an < in Einzelteile aufbrechen
+    datumzeit = datumzeit.Get(0).AsTokens("T")      '# 1. Teil an T in Einzelteile aufbrechen
+    zeit = datumzeit.Get(1)                         '# 2. Teil als Uhrzeit uebernehmen
+    zeit = zeit.AsTokens("Z").Get(0)                '# abschliessendes "Z" entfernen
+    sekunden = zeit.AsTokens(":").Get(2)            '# Sekunden ermitteln
+    minuten = zeit.AsTokens(":").Get(1)             '# Minuten ermitteln
+    stunden = zeit.AsTokens(":").Get(0)             '# Stunden ermitteln
+    zeitSek = sekunden.AsNumber + (minuten.AsNumber * 60) + (stunden.AsNumber * 3600) '# Zeit in Sekunden
+    
+  elseif (theLine.Trim.Left(6) = "<hdop>") then     '# letztes Element von <trkpt>
+                                                    '# hier beginnt die Auswertung der Daten
+  
+    av.Run("Sub_wgs2ch03", {_breite, _laenge}) '# Koordinaten von WGS1984 nach CH1903 transformieren
+
+    pte = pte + 1
+    
+    '# Distanz zwischen den Punkten und Gesamtdistanz berechnen
+    
+    if (pte = 1) then
+      breite_prev = _breite
+      laenge_prev = _laenge
+    else
+      if (breite_prev > _breite) then
+        breite_diff = breite_prev - _breite
+      else
+        breite_diff = _breite - breite_prev
+      end
+      if (laenge_prev > _laenge) then
+        laenge_diff = laenge_prev - _laenge
+      else
+        laenge_diff = _laenge - laenge_prev
+      end      
+      dist = ((breite_diff ^ 2) + (laenge_diff ^ 2)).Sqrt   '# gemaess Pythagoras
+      dist_total = dist_total + dist
+      breite_prev = _breite
+      laenge_prev = _laenge
+    end    
+    
+    '# Auf- und Abstieg berechnen
+    
+    if (pte = 1) then
+      hoehe_prev = hoehe
+    else
+      if (hoehe > hoehe_prev) then
+        bergauf = bergauf + (hoehe - hoehe_prev)
+      elseif (hoehe < hoehe_prev) then
+        bergab = bergab + (hoehe_prev - hoehe)
+      end
+      hoehe_prev = hoehe
+    end
+    
+    '# Zeitdauer berechnen
+    
+    if (pte = 1) then
+      zeitSek_prev = zeitSek
+    else
+      dauer = dauer + (zeitSek - zeitSek_prev)
+      zeitSek_prev = zeitSek
+    end
+    
+    '# Punktgeometrie festlegen und Attributierung durchfuehren
+    
+    thePoint = _laenge@_breite
+    rec = shpFTab.AddRecord
+    shpFTab.SetValueNumber(idField, rec, pte)
+    shpFTab.SetValueNumber(distField, rec, dist_total)
+    shpFTab.SetValueNumber(heightField, rec, hoehe)
+    shpFTab.SetValueNumber(bergaufField, rec, bergauf)
+    shpFTab.SetValueNumber(bergabField, rec, bergab)
+    shpFTab.SetValueString(zeitField, rec, zeit)
+    shpFTab.SetValueNumber(dauerField, rec, (dauer / 60))  '# in Minuten speichern
+    shpFTab.SetValueNumber(durchField, rec, (60 * (dist_total / 1000) / (dauer / 60)))
+    shpFTab.SetValue(shpField, rec, thePoint)
+  end
+end
+
+gpxFile.Close
+shpFTab.Flush
+
