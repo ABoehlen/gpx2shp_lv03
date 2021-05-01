@@ -10,7 +10,8 @@
 '#               bei gedrueckter Shift-Taste kann ein ganzer
 '#               Ordner mit GPX-Files auf einmal konvertiert
 '#               werden
-'# Note:         benoetigt Sub_gpx2shp im gleichen Projekt
+'# Note:         benoetigt Sub_gpx2shp und Sub_wgs2ch03 
+'#               im gleichen Projekt
 '#                 
 '##############################################################
 
