@@ -3,7 +3,7 @@
 '# Filename:         Sub_wgs2ch03.ave
 '# Author:           Adrian Boehlen
 '# Date:             24.05.2015
-'# Version:          0.1
+'# Version:          1.0
 '#
 '# Purpose:          konvertiert WGS1984 Koordinaten
 '#                     (Laenge / Breite in Dezimalgrad) 

@@ -2,16 +2,18 @@
 '#
 '# Filename:     gpx2shp_lv03
 '# Author:       Adrian Boehlen
-'# Date:         31.01.2021
-'# Version:      1.1
+'# Date:         05.08.2021
+'# Version:      1.2
 '#
 '# Purpose:      konvertiert ein GPX-File in ein Shapefile
 '#               in CH1903 LV03
 '#               bei gedrueckter Shift-Taste kann ein ganzer
 '#               Ordner mit GPX-Files auf einmal konvertiert
 '#               werden
-'# Note:         benoetigt Sub_gpx2shp und Sub_wgs2ch03 
-'#               im gleichen Projekt
+'# Note:         benoetigt...
+'#                Sub_gpx2shp
+'#                Sub_wgs2ch03
+'#                Sub_prj  ...im gleichen Projekt
 '#                 
 '##############################################################
 
@@ -57,7 +59,9 @@ if (System.IsShiftKeyDown) then
     for each gpxName in fileNameList
       gpxBaseName = gpxName.GetBaseName.AsTokens(".").Get(0)
       gpxFile = LineFile.Make(gpxName, #FILE_PERM_READ)
-      shpName = FileName.Make(outputdir.AsString + gpxBaseName + "_pt.shp")
+      shpName = FileName.Make(outputdir.AsString + gpxBaseName + "_pt")
+      av.Run("Sub_prj", {shpName})
+      shpName.SetExtension("shp")
       av.Run("Sub_gpx2shp", {gpxFile, shpName})
     end
   end
@@ -82,7 +86,8 @@ else
     return nil 
   end
 
+  av.Run("Sub_prj", {shpName}) 
   shpName.SetExtension("shp")
-
   av.Run("Sub_gpx2shp", {gpxFile, shpName})
 end
+

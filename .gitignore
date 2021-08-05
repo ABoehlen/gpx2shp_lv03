@@ -1,13 +1,13 @@
 # Documentation
 formeln_koordinatensyteme.pdf
+shapefile_technical_description
 
 # Test files
 test.apr
 test_pt.shp
 test_pt.shx
 test_pt.dbf
+test_pt.prj
 
 # Misc
 weiterentwicklung.txt
-lv03.prj
-lv95.prj
