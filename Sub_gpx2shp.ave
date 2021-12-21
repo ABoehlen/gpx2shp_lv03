@@ -2,8 +2,8 @@
 '#
 '# Filename:     Sub_gpx2shp.ave
 '# Author:       Adrian Boehlen
-'# Date:         23.01.2021
-'# Version:      1.0
+'# Date:         21.12.2021
+'# Version:      1.1
 '#
 '# Purpose:      Subroutine, welche von gpx2shp_lv03 aufgerufen
 '#               wird  
@@ -98,7 +98,7 @@ for each i in 1..totalRecs                          '# zeilenweise durchgehen
     stunden = zeit.AsTokens(":").Get(0)             '# Stunden ermitteln
     zeitSek = sekunden.AsNumber + (minuten.AsNumber * 60) + (stunden.AsNumber * 3600) '# Zeit in Sekunden
     
-  elseif (theLine.Trim.Left(6) = "<hdop>") then     '# letztes Element von <trkpt>
+  elseif (theLine.Trim.Left(8) = "</trkpt>") then   '# letztes Element von <trkpt>
                                                     '# hier beginnt die Auswertung der Daten
   
     av.Run("Sub_wgs2ch03", {_breite, _laenge}) '# Koordinaten von WGS1984 nach CH1903 transformieren
