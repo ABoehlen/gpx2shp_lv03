@@ -2,8 +2,8 @@
 '#
 '# Filename:     Sub_gpx2shp.ave
 '# Author:       Adrian Boehlen
-'# Date:         21.12.2021
-'# Version:      1.1
+'# Date:         31.07.2022
+'# Version:      1.2
 '#
 '# Purpose:      Subroutine, welche von gpx2shp_lv03 aufgerufen
 '#               wird  
@@ -146,6 +146,10 @@ for each i in 1..totalRecs                          '# zeilenweise durchgehen
       zeitSek_prev = zeitSek
     else
       dauer = dauer + (zeitSek - zeitSek_prev)
+      '# bei einem Datumswechsel die Anzahl Sekunden eines Tages wieder addieren
+      if (dauer < 0) then
+        dauer = dauer + 86400
+      end
       zeitSek_prev = zeitSek
     end
     
@@ -167,4 +171,5 @@ end
 
 gpxFile.Close
 shpFTab.Flush
+
 
