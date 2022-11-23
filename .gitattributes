@@ -1,3 +1,2 @@
-*.ave linguist-detectable=true
-*.gpx linguist-detectable=false
 *.ave linguist-language=Avenue
+*.gpx linguist-vendored
