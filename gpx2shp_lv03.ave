@@ -2,8 +2,8 @@
 '#
 '# Filename:     gpx2shp_lv03
 '# Author:       Adrian Boehlen
-'# Date:         05.08.2021
-'# Version:      1.2
+'# Date:         13.01.2023
+'# Version:      1.3
 '#
 '# Purpose:      konvertiert ein GPX-File in ein Shapefile
 '#               in CH1903 LV03
@@ -50,22 +50,44 @@ if (System.IsShiftKeyDown) then
 
   outputdir = outputdir.AsString.AsTokens("   ").Get(0)
 
+  '# Fortschrittsanzeige mit Stop button definieren
+  av.ShowMsg("Converting gpx files...")
+  canceled = False
+  av.ShowStopButton
+  statusIndex = 0
+  av.SetStatus(statusIndex)
+  
   '# alle Dateien mit der passenden Endung gemaess Filter im Verzeichnis auswaehlen
-  '# und konvertieren
+  '# und konvertieren sowie Fortschrittsanzeige aufbauen
   fileStack = Stack.Make
   fileStack.Push(inputdir)
   while (fileStack.IsEmpty.Not)
     fileNameList = fileStack.Pop.Read(theFilter)
+    fileNameCount = fileNameList.Count
+    statusIncrement = 100 / fileNameCount
     for each gpxName in fileNameList
       gpxBaseName = gpxName.GetBaseName.AsTokens(".").Get(0)
       gpxFile = LineFile.Make(gpxName, #FILE_PERM_READ)
       shpName = FileName.Make(outputdir.AsString + gpxBaseName + "_pt")
-      av.Run("Sub_prj", {shpName})
+      av.Run("Util.Sub_prj", {shpName})
       shpName.SetExtension("shp")
-      av.Run("Sub_gpx2shp", {gpxFile, shpName})
+      av.Run("Util.Sub_gpx2shp", {gpxFile, shpName})
+      statusIndex = statusIndex + statusIncrement
+      continued = av.SetStatus(statusIndex)
+      if (Not continued) then
+        canceled = true
+        break
+      end
     end
   end
-
+  
+  '# Falls Stop button gedrueckt wurde, Meldung ausgeben
+  if (canceled) then
+    av.ShowMsg("Process interrupted")
+  else
+    av.ShowMsg("Process completed")
+    av.ClearStatus   '# damit Fortschrittsanzeige verschwindet
+  end
 else
 
   '# einzelnes GPX-File einlesen
